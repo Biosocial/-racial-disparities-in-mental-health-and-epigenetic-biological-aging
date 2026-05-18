@@ -1,0 +1,127 @@
+TITLE: Your title goes here
+DATA: FILE = "forMplus.dat";
+VARIABLE: 
+NAMES = idnum cm1bsex Age9_months Age15_months Int3 Int3_log Int3_Std Ext3 Ext3_log
+     Ext3_Std Int5 Int5_log Int5_Std3 Ext5 Ext5_log Ext5_Std3 Int9 Int9_log
+     Int9_Std3 Ext9 Ext9_log Ext9_Std3 Int15 Int15_log Int15_Std3 Ext15 Ext15_log
+     Ext15_Std3 Array k5me_poam45 k5me_pcgrim k5me_pcphenoage k6me_poam45
+     k6me_pcgrim k6me_pcphenoage k5mk_poam45 k5mk_pcgrim k5mk_pcphenoage k6mk_poam45
+     k6mk_pcgrim k6mk_pcphenoage DunedinPACE_9_raw DunedinPACE_9_res
+     DunedinPACE_9_res_std DunedinPACE_9_res_array DunedinPACE_9_res_array_std
+     PCGrim_9_raw PCGrim_9_accell_res PCGrim_9_accell_res_std
+     PCGrim_9_accell_res_array PCGrim_9_accell_res_array_std PCPheno_9_raw
+     PCPheno_9_accell_res PCPheno_9_accell_res_std PCPheno_9_accell_res_array
+     PCPheno_9_accell_res_array_std DunedinPACE_15_raw DunedinPACE_15_res
+     DunedinPACE_15_res_std DunedinPACE_15_res_array DunedinPACE_15_res_array_std
+     PCGrim_15_raw PCGrim_15_accell_res PCGrim_15_accell_res_std
+     PCGrim_15_accell_res_array PCGrim_15_accell_res_array_std PCPheno_15_raw
+     PCPheno_15_accell_res PCPheno_15_accell_res_std PCPheno_15_accell_res_array
+     PCPheno_15_accell_res_array_std eversmoke ck6ethrace h6a8 race_white race_black
+     race_hispanic race_other race_multi ZEduInc parent_stress_age9
+     parent_stress_age15 parent_stress_acrossages Close9 Close15 Close_acrossages
+     scale_cesd cesd_log scale_anxt scale_anxt_log k6e10 k6e16 Ngh9_overall
+     Ngh9_census mean_score_ngh9_log rgm1opin_ccvcs_race_theil_2000
+     rgm5opin_ccvcs_race_theil_2000 ch5bmip ck6bmip Puberty poverty_overall
+     publicass_overall Zngh Zpassist Zpoverty Ngh_overall_NEW; 
+MISSING=.;
+ 
+
+ 
+VARIABLE:   
+   USEVARIABLES ARE race_black race_hispanic race_other race_multi cm1bsex 
+   MH_3 MH_5 MH_9 MH_15;
+   
+   
+   
+    DEFINE:  
+ 
+ MH_3 = Int3_log;
+ MH_5 = Int5_log;
+ MH_9 = Int9_log;
+ MH_15 = Int15_log;
+   
+   
+   
+MODEL:
+   !initialize latent replacements
+   MH_7 BY ;
+   MH_11 BY ;
+   MH_13 BY ;
+   ! regressions of latents on manifest
+   I BY MH_3@1.0;
+   I BY MH_5@1.0;
+   I BY MH_9@1.0;
+   I BY MH_15@1.0;
+   ! regressions of latents on latents or manifests
+   MH_7 ON I@1.0;
+   MH_11 ON I@1.0;
+   MH_13 ON I@1.0;
+   
+   !linear slope 1
+   S1 BY MH_5@1.0;
+   S1 BY MH_9@3.0;
+   S1 BY MH_15@6.0;
+   !latent replacements
+   MH_7 ON S1@2.0;
+   MH_11 ON S1@4.0;
+   MH_13 ON S1@5.0;
+   
+   !linear slope 2
+   S2 BY MH_15@4.0;
+   S2 BY MH_9@1.0;
+   !latent replacements
+   MH_13 ON S2@3.0;
+   MH_11 ON S2@2.0;
+
+! residuals, variances and covariances
+   I WITH S1*-0.002 (COV_I_S1);
+   S1 WITH S2*-0.001 (COV_S1_S);
+   I WITH S2*0.002 (COV_I_S2);
+   
+   MH_3*0.006 (E1); !different in externalizing model
+   MH_5*0.004 (E2);
+   MH_7*0.003 (E3);
+   MH_9*0.003 (E3);
+   MH_11*0.003 (E3);
+   MH_13*0.003 (E3);
+   MH_15*0.003 (E3);
+   I*0.005 (V_I);
+   S1*0.001 (V_S1);
+   S2*0.002 (V_S2);
+   MH_7 WITH MH_11@0.0;
+   MH_7 WITH MH_13@0.0;
+   MH_7 WITH S2@0.0;
+   MH_11 WITH MH_13@0.0;
+   
+! means
+   [S1*-0.04678](M_S1);
+   [I*0.8489](M_I);
+   [S2*0.05918](M_S2);
+   [MH_3@0];
+   [MH_5@0];
+   [MH_7@0];
+   [MH_9@0];
+   [MH_11@0];
+   [MH_13@0];
+   [MH_15@0];
+   
+   
+   
+   ! MH and race
+   I ON race_black race_hispanic race_other race_multi cm1bsex;
+   S1 ON race_black race_hispanic race_other race_multi cm1bsex;
+   S2 ON race_black race_hispanic race_other race_multi cm1bsex;
+
+   
+    ! MH and DNAm
+   !DNAm ON I;;
+  ! ON DNAm ON SI;
+  !  DNAm ON S2;
+   
+   
+ANALYSIS:
+   TYPE = general;
+   ESTIMATOR = mlr;
+OUTPUT:
+   sampstat;
+  cinterval stdyx MODINDICES (ALL);

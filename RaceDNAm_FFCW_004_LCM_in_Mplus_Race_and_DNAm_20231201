@@ -1,0 +1,52 @@
+TITLE: Latent Change Score Model exploring race differences in DNAm from age 9 to 15;
+DATA: FILE = "forMplus_DNAmOnly_01122023.dat";
+VARIABLE: 
+NAMES = idnum cm1bsex ch5bmip ck6bmip eversmoke Puberty ck6ethrace race_white
+     race_black race_hispanic race_other race_multi ZEduInc DunedinPACE_9_res_array
+     PCGrim_9_accell_res_array PCPheno_9_accell_res_array DunedinPACE_15_res_array
+     PCGrim_15_accell_res_array PCPheno_15_accell_res_array
+     DunedinPACE_9_res_array_Std9 DunedinPACE_15_res_array_Std9
+     PCGrim_9_accell_res_array_Std9 PCGrim_15_accell_res_array_Std9
+     PCPheno_9_accell_res_array_Std9 PCPheno_15_accell_res_array_Std9 scale_cesd
+     cesd_log scale_anxt scale_anxt_log Int9_log Ext9_log Int15_log Ext15_log
+     Int9_log_Std9 Int15_log_Std9 Ext9_log_Std9 Ext15_log_Std9 Ngh_overall_NEW
+     Birthweight Gestage Drugspreg Alchlpreg Smokepreg k6e10 Close9 Close15
+     Close_acrossages parent_stress_age9 parent_stress_age15
+     parent_stress_acrossages rgm1opin_ccvcs_race_theil_2000
+     rgm5opin_ccvcs_race_theil_2000 racial_contexts racial_contexts_std h6a8; 
+MISSING=.;
+
+Usevariables are race_black race_hispanic race_other race_multi cm1bsex DNAm9 DNAm15 ; !cm1bsex ck6bmip eversmoke Puberty;  
+
+DEFINE:
+DNAm9 = PCGrim_9_accell_res_array_Std9; !PCPheno_9_accell_res_array_Std9 !PCGrim_9_accell_res_array_Std9; !DunedinPACE_9_res_array_Std9;
+DNAm15 = PCGrim_15_accell_res_array_Std9; !PCPheno_15_accell_res_array_Std9 !PCGrim_15_accell_res_array_Std9; !DunedinPACE_15_res_array_Std9;
+!DNAm age 15 standardized to DNAm age 9
+
+
+MODEL:
+! regressions of latents on manifest
+   DIFFdnam BY DNAm15@1.0;
+! regressions of manifest on manifest
+   DIFFdnam ON DNAm9*1.0;
+   DNAm15 ON DNAm9@1.0;
+! regressions of latents on latents or manifests
+! residuals, variances and covariances
+   DNAm9*1.0;
+   DIFFdnam*1.0;
+   DNAm15@0;
+! means
+   [DIFFdnam*1.0];
+   [DNAm9*1.0];
+   [DNAm15@0];
+ 
+ !associations with race and sex
+  DIFFdnam ON race_black race_hispanic race_other race_multi cm1bsex;
+  DNAm9 ON race_black race_hispanic race_other race_multi cm1bsex;
+   
+   
+ANALYSIS:
+   TYPE = general;
+   ESTIMATOR = ml;
+OUTPUT:
+   cinterval stdyx MODINDICES (ALL);
